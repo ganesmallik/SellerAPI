@@ -1,4 +1,5 @@
-﻿using MongoDB.Driver;
+﻿using Amazon.DynamoDBv2.DataModel;
+using Amazon.DynamoDBv2.DocumentModel;
 using SellerAPI.Model;
 using System;
 using System.Collections.Generic;
@@ -7,60 +8,57 @@ using System.Threading.Tasks;
 
 namespace SellerAPI.Services
 {
-    public class BiddingService
+    public class BiddingService : IBiddingService
     {
-        private readonly IMongoCollection<Product> _products;
-        private readonly IMongoCollection<Bid> _bids;
+        private readonly IDynamoDBContext _dynamoDBContext;
 
-        public BiddingService(IBiddingDatabaseSettings settings)
+        public BiddingService(IDynamoDBContext dynamoDBContext)
         {
-            var client = new MongoClient(settings.ConnectionString);
-            var database = client.GetDatabase(settings.DatabaseName);
-
-            _products = database.GetCollection<Product>(settings.ProductCollectionName);
-            _bids = database.GetCollection<Bid>(settings.BidCollectionName);
+            _dynamoDBContext = dynamoDBContext;
         }
 
-        public List<Product> GetProducts() =>
-            _products.Find(product => true).ToList();
+        public async Task<List<Product>> GetProducts() =>
+            await _dynamoDBContext.ScanAsync<Product>(default).GetRemainingAsync();
 
-        public Product GetProduct(string id) =>
-            _products.Find<Product>(product => product.Id == id).FirstOrDefault();
-
-        public Product CreateProduct(Product product)
+        public async Task<Product> GetProduct(string id)
         {
-            _products.InsertOne(product);
-            return product;
+            return await _dynamoDBContext.LoadAsync<Product>(id);
         }
 
-        public void UpdateProduct(string id, Product productIn) =>
-            _products.ReplaceOne(product => product.Id == id, productIn);
-
-        public void RemoveProduct(Product productIn) =>
-            _products.DeleteOne(product => product.Id == productIn.Id);
-
-        public void RemoveProduct(string id) =>
-            _products.DeleteOne(product => product.Id == id);
-
-        public List<Bid> GetBids(string productId) =>
-            _bids.Find(bid => bid.ProductId == productId).ToList();
-
-        public Bid GetBid(string id) =>
-            _bids.Find<Bid>(bid => bid.Id == id).FirstOrDefault();
-
-        public Bid CreateBid(Bid bid)
+        public async void CreateOrUpdateProduct(Product product)
         {
-            _bids.InsertOne(bid);
-            return bid;
+            await _dynamoDBContext.SaveAsync(product);
         }
 
-        public void UpdateBid(string id, Bid bidIn) =>
-            _bids.ReplaceOne(bid => bid.Id == id, bidIn);
 
-        public void RemoveBid(Bid bidIn) =>
-            _bids.DeleteOne(bid => bid.Id == bidIn.Id);
+        public async void RemoveProduct(Product productIn) =>
+            await _dynamoDBContext.DeleteAsync<Product>(productIn.Id);
 
-        public void RemoveBid(string id) =>
-            _bids.DeleteOne(bid => bid.Id == id);
+        public async void RemoveProduct(string id) =>
+            await _dynamoDBContext.DeleteAsync<Product>(id);
+
+
+        public async Task<List<Bid>> GetBids(string productId)
+        {
+            var scanCondition = new List<ScanCondition>() { new ScanCondition("ProductId", ScanOperator.Equal, productId)
+                                                            };
+           
+            return await _dynamoDBContext.ScanAsync<Bid>(scanCondition).GetRemainingAsync();
+      
+        }
+
+        public async Task<Bid> GetBid(string id) =>
+             await _dynamoDBContext.LoadAsync<Bid>(id);
+
+        public async void CreateOrUpdateBid(Bid bid)
+        {
+            await _dynamoDBContext.SaveAsync(bid);
+        }
+
+        public async void RemoveBid(Bid bidIn) =>
+             await _dynamoDBContext.DeleteAsync<Bid>(bidIn);
+
+        public async void RemoveBid(string id) =>
+             await _dynamoDBContext.DeleteAsync<Bid>(id);
     }
 }

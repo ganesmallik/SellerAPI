@@ -14,24 +14,24 @@ namespace SellerAPI.Controllers
     [ApiController]
     public class SellerController : ControllerBase
     {
-        private readonly BiddingService _biddingService;
+        private readonly IBiddingService _biddingService;
 
-        public SellerController(BiddingService biddingService)
+        public SellerController(IBiddingService biddingService)
         {
             _biddingService = biddingService;
         }
         [HttpGet]
-        public ActionResult<List<Product>> Get()
+        public async Task<ActionResult<List<Product>>> Get()
         {
-            return _biddingService.GetProducts();
+            return await _biddingService.GetProducts();
         }
 
         [HttpGet("{id}", Name = "GetProduct")]
-        public ActionResult<Product> Get(string id)
+        public async Task<ActionResult<Product>> Get(string id)
         {
-            var product = _biddingService.GetProduct(id);
+            var product = await _biddingService.GetProduct(id);
 
-            if (product == null)
+            if (product == null )
             {
                 return NotFound();
             }
@@ -40,7 +40,7 @@ namespace SellerAPI.Controllers
         }
         [HttpPost]
         [Route("add-product")]
-        public ActionResult<Product> AddProduct(Product model)
+        public async Task<ActionResult<Product>> AddProduct(Product model)
         {
             if(!ModelState.IsValid)
             {
@@ -58,15 +58,16 @@ namespace SellerAPI.Controllers
                 {
                     return BadRequest("Bid end date should be future date");
                 }
-                _biddingService.CreateProduct(model);
+                model.Id = Guid.NewGuid().ToString();
+                _biddingService.CreateOrUpdateProduct(model);
                 return CreatedAtRoute("GetProduct", new { id = model.Id.ToString() }, model);
 
             }
         }
         [HttpDelete("delete/{id}")]
-        public IActionResult Delete(string id)
+        public async Task<IActionResult> Delete(string id)
         {
-            var product = _biddingService.GetProduct(id);
+            var product = await _biddingService.GetProduct(id);
 
             if (product == null)
             {
@@ -76,7 +77,7 @@ namespace SellerAPI.Controllers
             {
                 return BadRequest("Bid end date is already expired");
             }
-            var bids = _biddingService.GetBids(id);
+            var bids = await _biddingService.GetBids(id);
 
             if(bids != null && bids.Count() >0)
             {
@@ -88,9 +89,9 @@ namespace SellerAPI.Controllers
             return NoContent();
         }
         [HttpGet("show-bids/{productId}")]
-        public ActionResult<ProductBidDetails> ShowBids(string productId)
+        public async Task<ActionResult<ProductBidDetails>> ShowBids(string productId)
         {
-            var product = _biddingService.GetProduct(productId);
+            var product = await _biddingService.GetProduct(productId);
 
             if (product == null)
             {
@@ -107,7 +108,7 @@ namespace SellerAPI.Controllers
                 EndDate = product.EndDate
             };
 
-            var bids = _biddingService.GetBids(productId);
+            var bids = await _biddingService.GetBids(productId);
             
             if(bids!= null)
             {

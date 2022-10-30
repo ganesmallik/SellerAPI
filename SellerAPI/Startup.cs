@@ -1,3 +1,6 @@
+using Amazon.DynamoDBv2;
+using Amazon.DynamoDBv2.DataModel;
+using Amazon.Extensions.NETCore.Setup;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -28,15 +31,21 @@ namespace SellerAPI
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.Configure<BiddingDatabaseSettings>(
-                Configuration.GetSection(nameof(BiddingDatabaseSettings)));
+            //services.Configure<BiddingDatabaseSettings>(
+            //    Configuration.GetSection(nameof(BiddingDatabaseSettings)));
 
-            services.AddSingleton<IBiddingDatabaseSettings>(sp =>
-                sp.GetRequiredService<IOptions<BiddingDatabaseSettings>>().Value);
+            //services.AddSingleton<IBiddingDatabaseSettings>(sp =>
+            //    sp.GetRequiredService<IOptions<BiddingDatabaseSettings>>().Value);
 
-            services.AddSingleton<BiddingService>();
+            services.AddScoped<IBiddingService,BiddingService>();
 
             services.AddControllers();
+
+            services.AddDefaultAWSOptions(Configuration.GetAWSOptions());
+            services.AddAWSService<IAmazonDynamoDB>();
+            services.AddScoped<IDynamoDBContext, DynamoDBContext>();
+
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
