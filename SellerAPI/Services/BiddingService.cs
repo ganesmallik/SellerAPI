@@ -47,8 +47,8 @@ namespace SellerAPI.Services
       
         }
 
-        public async Task<Bid> GetBid(string id) =>
-             await _dynamoDBContext.LoadAsync<Bid>(id);
+        public async Task<Bid> GetBid(string productId, string id) =>
+             await _dynamoDBContext.LoadAsync<Bid>(id, productId);
 
         public async void CreateOrUpdateBid(Bid bid)
         {

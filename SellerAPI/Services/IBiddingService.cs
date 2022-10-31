@@ -8,7 +8,7 @@ namespace SellerAPI.Services
     {
         void CreateOrUpdateBid(Bid bid);
         void CreateOrUpdateProduct(Product product);
-        Task<Bid> GetBid(string id);
+        Task<Bid> GetBid(string productId,string id);
         Task<List<Bid>> GetBids(string productId);
         Task<Product> GetProduct(string id);
         Task<List<Product>> GetProducts();

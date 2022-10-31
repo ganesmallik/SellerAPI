@@ -31,12 +31,6 @@ namespace SellerAPI
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            //services.Configure<BiddingDatabaseSettings>(
-            //    Configuration.GetSection(nameof(BiddingDatabaseSettings)));
-
-            //services.AddSingleton<IBiddingDatabaseSettings>(sp =>
-            //    sp.GetRequiredService<IOptions<BiddingDatabaseSettings>>().Value);
-
             services.AddScoped<IBiddingService,BiddingService>();
 
             services.AddControllers();
